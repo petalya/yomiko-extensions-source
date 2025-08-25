@@ -148,7 +148,7 @@ jobs:
         with:
           repository: petalya/yomiko-extensions
           token: ${{ secrets.BOT_PAT }}
-          ref: repo
+          ref: main
           path: repo
           persist-credentials: true
 
