@@ -16,7 +16,7 @@ class NovelBin : ParsedHttpSource() {
     override val baseUrl = "https://novelbin.com"
     override val lang = "en"
     override val supportsLatest = true
-    override val id: Long = 10001L
+    val isNovelSource: Boolean = true
 
     override fun popularMangaRequest(page: Int): Request =
         Request.Builder().url("$baseUrl/sort/top-hot-novel").headers(headers).build()

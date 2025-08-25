@@ -15,7 +15,7 @@ class FreeWebNovel : ParsedHttpSource() {
     override val baseUrl = "https://freewebnovel.com"
     override val lang = "en"
     override val supportsLatest = true
-    override val id: Long = 10002L
+    val isNovelSource: Boolean = true
 
     override fun popularMangaRequest(page: Int): Request =
         Request.Builder().url("$baseUrl/sort/most-popular?page=$page").headers(headers).build()

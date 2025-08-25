@@ -29,7 +29,7 @@ class NovelFire : ParsedHttpSource() {
     override val baseUrl = "https://novelfire.net"
     override val lang = "en"
     override val supportsLatest = true
-    override val id: Long = 10003L
+    val isNovelSource: Boolean = true
 
     override fun popularMangaRequest(page: Int): Request =
         Request.Builder().url("$baseUrl/genre-all/sort-popular/status-all/all-novel?page=$page").headers(headers).build()
