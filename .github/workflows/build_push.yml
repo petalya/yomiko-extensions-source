@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload APKs (${{ matrix.chunk.number }})
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: "github.repository == 'keiyoushi/extensions-source'"
+        if: "github.repository == 'petalya/yomiko-extensions-source'"
         with:
           name: "individual-apks-${{ matrix.chunk.number }}"
           path: "**/*.apk"
@@ -112,7 +112,7 @@ jobs:
   publish:
     name: Publish extension repo
     needs: [prepare, build]
-    if: "github.repository == 'keiyoushi/extensions-source'"
+    if: "github.repository == 'petalya/yomiko-extensions-source'"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -146,7 +146,7 @@ jobs:
       - name: Checkout repo branch
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          repository: keiyoushi/extensions
+          repository: petalya/yomiko-extensions
           token: ${{ secrets.BOT_PAT }}
           ref: repo
           path: repo
