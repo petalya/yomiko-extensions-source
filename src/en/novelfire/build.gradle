@@ -1,0 +1,7 @@
+ext {
+    extName = 'NovelFire'
+    extClass = '.NovelFire'
+    extVersionCode = 11
+}
+
+apply from: "$rootDir/common.gradle"

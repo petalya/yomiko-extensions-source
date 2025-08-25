@@ -1,0 +1,7 @@
+ext {
+    extName = 'FreeWebNovel'
+    extClass = '.FreeWebNovel'
+    extVersionCode = 10
+}
+
+apply from: "$rootDir/common.gradle" 
