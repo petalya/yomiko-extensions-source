@@ -7,6 +7,8 @@ import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.ParsedHttpSource
 import okhttp3.FormBody
 import okhttp3.Request
+import okhttp3.Response
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 
@@ -81,6 +83,15 @@ class FreeWebNovel : ParsedHttpSource() {
         chapter.setUrlWithoutDomain(element.attr("href"))
         chapter.name = element.text()
         return chapter
+    }
+
+    override fun chapterListParse(response: Response): List<SChapter> {
+        // Reverse order so the newest chapter appears first
+        val body = response.body?.string().orEmpty()
+        val doc = Jsoup.parse(body)
+        return doc.select(chapterListSelector())
+            .map { chapterFromElement(it) }
+            .reversed()
     }
 
     override fun pageListParse(document: Document): List<Page> {

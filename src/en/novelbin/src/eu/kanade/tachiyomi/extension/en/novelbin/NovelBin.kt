@@ -90,7 +90,9 @@ class NovelBin : ParsedHttpSource() {
     override fun chapterListParse(response: Response): List<SChapter> {
         val body = response.body?.string().orEmpty()
         val doc = Jsoup.parse(body)
-        return doc.select("ul.list-chapter a").map { chapterFromElement(it) }
+        return doc.select("ul.list-chapter a")
+            .map { chapterFromElement(it) }
+            .reversed()
     }
     override fun chapterListSelector(): String = "ul.list-chapter a"
     override fun chapterFromElement(element: Element): SChapter {
