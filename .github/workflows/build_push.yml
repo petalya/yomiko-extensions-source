@@ -103,7 +103,7 @@ jobs:
         if: "github.repository == 'petalya/yomiko-extensions-source'"
         with:
           name: "individual-apks-${{ matrix.chunk.number }}"
-          path: "**/*.apk"
+          path: "**/build/outputs/apk/release/*.apk"
           retention-days: 1
 
       - name: Clean up CI files
