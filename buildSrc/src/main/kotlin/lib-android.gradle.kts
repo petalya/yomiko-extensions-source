@@ -13,7 +13,9 @@ android {
 
     namespace = "eu.kanade.tachiyomi.lib.${project.name}"
 
-    androidResources.enable = false
+    buildFeatures {
+        androidResources = false
+    }
 }
 
 dependencies {
