@@ -20,7 +20,10 @@ class FreeWebNovel : ParsedHttpSource() {
     val isNovelSource: Boolean = true
 
     override fun popularMangaRequest(page: Int): Request =
-        Request.Builder().url("$baseUrl/sort/most-popular?page=$page").headers(headers).build()
+        Request.Builder()
+            .url(if (page == 1) "$baseUrl/sort/most-popular" else "$baseUrl/sort/most-popular/$page")
+            .headers(headers)
+            .build()
     override fun popularMangaSelector(): String = ".ul-list1 .li"
     override fun popularMangaFromElement(element: Element): SManga {
         val manga = SManga.create()
@@ -30,13 +33,16 @@ class FreeWebNovel : ParsedHttpSource() {
         manga.thumbnail_url = element.selectFirst(".pic img")?.absUrl("src")
         return manga
     }
-    override fun popularMangaNextPageSelector(): String? = null
+    override fun popularMangaNextPageSelector(): String? = "a:contains(>>)"
 
     override fun latestUpdatesRequest(page: Int): Request =
-        Request.Builder().url("$baseUrl/sort/latest-novel?page=$page").headers(headers).build()
+        Request.Builder()
+            .url(if (page == 1) "$baseUrl/sort/latest-novel" else "$baseUrl/sort/latest-novel/$page")
+            .headers(headers)
+            .build()
     override fun latestUpdatesSelector(): String = popularMangaSelector()
     override fun latestUpdatesFromElement(element: Element): SManga = popularMangaFromElement(element)
-    override fun latestUpdatesNextPageSelector(): String? = null
+    override fun latestUpdatesNextPageSelector(): String? = "a:contains(>>)"
 
     override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request {
         val formBody = FormBody.Builder()

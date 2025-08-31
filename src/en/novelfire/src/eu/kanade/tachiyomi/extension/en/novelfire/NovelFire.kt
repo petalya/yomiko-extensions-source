@@ -7,6 +7,7 @@ import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.online.ParsedHttpSource
 import eu.kanade.tachiyomi.util.asJsoup
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONObject
@@ -55,7 +56,7 @@ class NovelFire : ParsedHttpSource() {
         return manga
     }
 
-    override fun popularMangaNextPageSelector(): String? = null
+    override fun popularMangaNextPageSelector(): String? = "a.page-link[rel=next], a[rel=next]"
 
     override fun latestUpdatesRequest(page: Int): Request =
         Request.Builder().url("$baseUrl/genre-all/sort-new/status-all/all-novel?page=$page").headers(headers).build()
@@ -80,23 +81,49 @@ class NovelFire : ParsedHttpSource() {
 
         return manga
     }
-    override fun latestUpdatesNextPageSelector(): String? = null
+    override fun latestUpdatesNextPageSelector(): String? = "a.page-link[rel=next], a[rel=next]"
 
-    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request =
-        Request.Builder().url("$baseUrl/ajax/searchLive?inputContent=${java.net.URLEncoder.encode(query, "UTF-8")}").headers(headers).build()
-
-    override fun searchMangaParse(response: Response): MangasPage {
-        val json = JSONObject(response.body?.string() ?: "")
-        val html = json.optString("html", "")
-
-        if (html.isEmpty()) {
-            return MangasPage(emptyList(), false)
+    override fun searchMangaRequest(page: Int, query: String, filters: FilterList): Request {
+        if (query.isNotBlank()) {
+            return Request.Builder()
+                .url("$baseUrl/ajax/searchLive?inputContent=${java.net.URLEncoder.encode(query, "UTF-8")}")
+                .headers(headers)
+                .build()
         }
 
-        val document = Jsoup.parse(html)
-        val mangas = document.select("ul.novel-list.horizontal.col2 li.novel-item").map { searchMangaFromElement(it) }
+        // Build advanced search URL with filters
+        val url = baseUrl.toHttpUrl().newBuilder().apply {
+            addPathSegment("search-adv")
 
-        return MangasPage(mangas, false)
+            // Apply filter list (if empty, use default getFilterList to ensure defaults)
+            val filterList = filters.ifEmpty { getFilterList() }
+            filterList.filterIsInstance<UriFilter>().forEach { it.addToUri(this) }
+
+            // Pagination
+            addQueryParameter("page", page.toString())
+        }.build()
+
+        return Request.Builder().url(url).headers(headers).build()
+    }
+
+    override fun searchMangaParse(response: Response): MangasPage {
+        val bodyStr = response.body?.string().orEmpty()
+
+        // If it's the live-search JSON payload
+        if (bodyStr.trimStart().startsWith("{")) {
+            val json = JSONObject(bodyStr)
+            val html = json.optString("html", "")
+            if (html.isEmpty()) return MangasPage(emptyList(), false)
+            val document = Jsoup.parse(html, baseUrl)
+            val mangas = document.select("ul.novel-list.horizontal.col2 li.novel-item").map { searchMangaFromElement(it) }
+            return MangasPage(mangas, false)
+        }
+
+        // Otherwise it's the HTML from /search-adv
+        val document = Jsoup.parse(bodyStr, baseUrl)
+        val entries = document.select("ul.novel-list.col6 li.novel-item, ul.novel-list.horizontal.col2 li.novel-item").map { searchMangaFromElement(it) }
+        val hasNext = document.selectFirst("a:contains(Next), a:contains(>>)") != null
+        return MangasPage(entries, hasNext)
     }
 
     override fun searchMangaFromElement(element: Element): SManga {
@@ -108,7 +135,9 @@ class NovelFire : ParsedHttpSource() {
         manga.title = title?.text()?.trim() ?: "Unknown Title"
         manga.setUrlWithoutDomain(link?.attr("href") ?: "")
 
-        val coverUrl = cover?.attr("src") ?: cover?.attr("data-src") ?: ""
+        val coverUrl = cover?.attr("data-src")?.takeIf { it.isNotBlank() }
+            ?: cover?.attr("src")?.takeIf { it.isNotBlank() }
+            ?: ""
         manga.thumbnail_url = when {
             coverUrl.startsWith("http") -> coverUrl
             coverUrl.startsWith("//") -> "https:$coverUrl"
@@ -121,6 +150,19 @@ class NovelFire : ParsedHttpSource() {
     override fun searchMangaSelector(): String = "ul.novel-list.horizontal.col2 li.novel-item"
 
     override fun searchMangaNextPageSelector(): String? = null
+
+    // =============================== Filters ===============================
+
+    override fun getFilterList() = FilterList(
+        OriginLanguageFilter(),
+        GenreModeFilter(),
+        GenreFilter(),
+        ChaptersFilter(),
+        RatingModeFilter(),
+        RatingValueFilter(),
+        StatusFilter(),
+        SortFilter(defaultValue = "date"),
+    )
 
     override fun mangaDetailsRequest(manga: SManga): Request {
         val novelPath = manga.url.removePrefix("/").removeSuffix("/")
@@ -229,7 +271,7 @@ class NovelFire : ParsedHttpSource() {
             }
         }
 
-        return chapters.reversed() // Reverse to get chronological order
+        return chapters.reversed() // Reverse to get Newest to Oldest Order
     }
 
     private fun parseChaptersFromPage(document: Document): List<SChapter> {
