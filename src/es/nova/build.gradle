@@ -1,0 +1,7 @@
+ext {
+    extName = 'NOVA'
+    extClass = '.NOVA'
+    extVersionCode = 1
+}
+
+apply from: "$rootDir/common.gradle"
